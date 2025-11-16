@@ -6,7 +6,14 @@ const OpenAI = require("openai");
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin:[
+        "https:sanathai.vercel.app"
+    ],
+       methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+}
+));
 dotEnv.config();
 
 const client = new OpenAI({
