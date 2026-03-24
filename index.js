@@ -1,14 +1,15 @@
 const express = require("express");
 const cors = require("cors");
-const dotEnv = require("dotenv");
+const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const OpenAI = require("openai");
 
-dotEnv.config();
+dotenv.config();
 
 const app = express();
 app.use(express.json());
 
+// ✅ CORS FIX
 app.use(cors({
     origin: [
         "https://sanathai.vercel.app",
@@ -19,20 +20,22 @@ app.use(cors({
     credentials: true
 }));
 
+// ✅ OpenAI Setup
 const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
+// ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("Mongo DB Connected Successfully..."))
-    .catch((err) => console.log(err));
+    .catch((err) => console.log("Mongo Error:", err));
 
-const PORT = process.env.PORT || 7000;
-
+// ✅ Test Route
 app.get("/", (req, res) => {
-    res.send("Welcome to the Sanath_AI");
+    res.send("✅ Sanath AI Backend Running...");
 });
 
+// ✅ CHAT API (FIXED)
 app.post("/chat", async (req, res) => {
     try {
         const userMessage = req.body.message;
@@ -41,22 +44,32 @@ app.post("/chat", async (req, res) => {
             return res.status(400).json({ message: "Message is required" });
         }
 
-        const response = await client.responses.create({
+        // 🔥 USE STABLE API
+        const response = await client.chat.completions.create({
             model: "gpt-4o-mini",
-            input: userMessage,
+            messages: [
+                { role: "system", content: "You are a helpful AI assistant." },
+                { role: "user", content: userMessage }
+            ],
         });
 
-        const aiReply = response.output_text;
+        const aiReply = response.choices[0].message.content;
+
         return res.json({ reply: aiReply });
 
     } catch (err) {
-        console.log("AI ERROR:", err);
-        return res.status(500).json("Internal Server Error");
+        console.log("❌ AI ERROR:", err.message);
+
+        return res.status(500).json({
+            error: "Internal Server Error",
+            details: err.message
+        });
     }
 });
 
+// ✅ PORT
+const PORT = process.env.PORT || 7000;
+
 app.listen(PORT, () => {
-    console.log("Server Started Successfully on Port", PORT);
+    console.log("🚀 Server running on port", PORT);
 });
-///Sanath///
-/////
